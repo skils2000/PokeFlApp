@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'PokeFlApp',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -68,26 +68,18 @@ class Pokemon {
   String url;
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  List pokemons;
+class SortSelect {
+  int value;
+  String name;
 
-  /*void getPokemons() async {
-    try {
-      var response = await http
-          .get(Uri.parse('https://pokeapi.co/api/v2/pokemon?limit=100'));
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-      print('${response.body.length}');
-      setState(() {
-        _counter = response.body.length;
-        //_pekemons = response.body;
-      });
-    } catch (error) {
-      print("ERROR: $error");
-    }
-  }
-  */
+  SortSelect({this.value, this.name});
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  List pokemons;
+  List pokemonsBy5;
+  List pokemonsSorted;
+  String dropdownValue = "One";
 
   Future<String> getPokemons() async {
     var resp = await http.get(
@@ -119,6 +111,33 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
+        actions: <Widget>[
+          /*
+          Container(
+            margin: EdgeInsets.only(top: 20.0, left: 20, right: 20.0),
+            padding: EdgeInsets.all(12.0),
+            height: 70,
+            color: Colors.white,
+            child: DropdownButton<String>(
+              value: dropdownValue,
+              style: const TextStyle(color: Colors.black87, fontSize: 20.0),
+              onChanged: (String newValue) {
+                setState(() {
+                  dropdownValue = newValue;
+                });
+              },
+              isExpanded: true,
+              items: <String>["One", "Two", "Free", "Four"]
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          ),
+          */
+        ],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
@@ -142,22 +161,6 @@ class _MyHomePageState extends State<MyHomePage> {
           // center the children vertically; the main axis here is the vertical
           // axis because Columns are vertical (the cross axis would be
           // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-        */
-        /*ListView.builder(itemCount: _pekemons.length,
-        itemBuilder: (context, index){
-          return ListTile(title: Text(_pokemons[index]),)
-        })
         */
       ),
       floatingActionButton: FloatingActionButton(
@@ -188,26 +191,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getListItem(int i) {
     if (pokemons == null || pokemons.length < 1) return null;
-    /*
-    if (i == 0) {
-      return Container(
-        margin: EdgeInsets.all(4),
-        child: Center(
-          child: Text(
-            "Titles",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-        ),
-      );
-    }
-    */
+
     return Container(
       margin: EdgeInsets.all(4.0),
       child: Padding(
         padding: EdgeInsets.all(4.0),
-        child: Text(
-          pokemons[i]['name'].toString(),
-          style: TextStyle(fontSize: 18),
+        child: new Row(
+          children: [
+            new Image.network(
+              "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i + 1}.png",
+              width: 200.0,
+              height: 100.0,
+            ),
+            new Expanded(
+                child: new Text(
+              pokemons[i]['name'].toString(),
+              style: TextStyle(fontSize: 18),
+            ))
+          ],
         ),
       ),
     );
