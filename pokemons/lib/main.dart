@@ -81,6 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List pokemonsSorted;
   int numberOfAdded = 6;
   int sortTypeId = 0;
+  int numberOfPokemons = 30;
   List sortReversed;
   List<String> sortTypes = [
     "not sorted",
@@ -90,17 +91,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<String> getPokemons() async {
     var resp = await http.get(
-        Uri.encodeFull("https://pokeapi.co/api/v2/pokemon"),
+        Uri.encodeFull(
+            "https://pokeapi.co/api/v2/pokemon?limit=$numberOfPokemons"),
         headers: {/*"Accept": "application/json"*/});
     print(resp.body);
     PokemonResponse temporary =
         PokemonResponse.fromJson(json.decode(resp.body));
     print(temporary.results);
     setState(() {
-      pokemons = temporary.results;
-      pokemonsBy6 = temporary.results.sublist(0, 6);
-      numberOfAdded = 6;
+      pokemons = temporary.results.sublist(0);
     });
+    pokemonsBy6 = temporary.results.sublist(0, 6);
+    numberOfAdded = 6;
+    pokemonsSorted = temporary.results.sublist(0);
+    sortReversed = temporary.results;
+    /*
+    pokemonsSorted.sort((a, b) => a['name'].compareTo(b['name']));
+    sortReversed.sort((a, b) => b['name'].compareTo(a['name']));
+    print(pokemons);
+    print(pokemonsSorted);
+    print(sortReversed);
+    */
+    //getUrls();
+    sortStuff();
     return "Success";
   }
 
@@ -108,6 +121,26 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     getPokemons();
+  }
+
+  void sortStuff() {
+    print("in sort");
+    pokemonsSorted.sort((a, b) => a['name'].compareTo(b['name']));
+    sortReversed.sort((a, b) => b['name'].compareTo(a['name']));
+    print(pokemons);
+    print(pokemonsSorted);
+    print(sortReversed);
+  }
+
+  Future getPic(url) async {
+    var resp = await http
+        .get(Uri.encodeFull(url), headers: {/*"Accept": "application/json"*/});
+    //print(resp.body);
+    var temporary = json.decode(resp.body);
+    print("in sprites");
+    print(temporary['sprites']['front_default']);
+
+    return temporary['sprites']['front_default'].toString();
   }
 
   void expandList() {
@@ -138,6 +171,51 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void onSort() {
+    print("Click on sort button");
+    print(sortTypeId);
+    print(sortTypes.length - 1);
+    if (sortTypeId < sortTypes.length - 1) {
+      setState(() {
+        sortTypeId = sortTypeId + 1;
+      });
+    } else {
+      setState(() {
+        sortTypeId = 0;
+      });
+    }
+    print(sortTypeId);
+    switch (sortTypeId) {
+      case 0:
+        {
+          print("No sort");
+          setState(() {
+            pokemonsBy6 = pokemons.sublist(0, 6);
+            numberOfAdded = 6;
+          });
+          break;
+        }
+      case 1:
+        {
+          print("Alp Up");
+          setState(() {
+            pokemonsBy6 = pokemonsSorted.sublist(0, 6);
+            numberOfAdded = 6;
+          });
+          break;
+        }
+      case 2:
+        {
+          print("Alp down");
+          setState(() {
+            pokemonsBy6 = sortReversed.sublist(0, 6);
+            numberOfAdded = 6;
+          });
+          break;
+        }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -154,39 +232,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title:
-            Text(widget.title + "                   " + sortTypes[sortTypeId]),
+        title: Text(widget.title + "         " + sortTypes[sortTypeId]),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: getList()
-        /*
-          Container(
-            margin: EdgeInsets.only(top: 20.0, left: 20, right: 20.0),
-            padding: EdgeInsets.all(12.0),
-            height: 70,
-            color: Colors.white,
-            child: DropdownButton<String>(
-              value: dropdownValue,
-              style: const TextStyle(color: Colors.black87, fontSize: 20.0),
-              onChanged: (String newValue) {
-                setState(() {
-                  dropdownValue = newValue;
-                });
-              },
-              isExpanded: true,
-              items: <String>['One', 'Two', 'Free', 'Four']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ),
-          */
-        ,
+        child: getList(),
 
         /*Column(
           // Column is also a layout widget. It takes a list of children and
@@ -224,7 +275,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo is ScrollEndNotification &&
-              scrollInfo.metrics.extentAfter == 0) {
+              scrollInfo.metrics.extentAfter == 0 &&
+              pokemonsBy6.length < numberOfPokemons) {
             expandList();
             print("The End");
             print(pokemonsBy6);
@@ -244,7 +296,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getListItem(int i) {
     if (pokemons == null || pokemons.length < 1) return null;
-
+    var pokPic = getPic(pokemonsBy6[i]['url']);
     return Container(
       margin: EdgeInsets.all(4.0),
       child: Padding(
@@ -252,6 +304,11 @@ class _MyHomePageState extends State<MyHomePage> {
         child: new Row(
           children: [
             new Image.network(
+              //pokPic.toString(),
+              "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i + 1}.png",
+              //"https://img.pokemondb.net/sprites/silver/normal/${pokemonsBy6[i]['name']}.png",
+              //[URL="http://pokemondb.net/pokedex/bulbasaur"][IMG]https://img.pokemondb.net/sprites/black-white/normal/bulbasaur.png[/IMG][/URL]}
+
               width: 200.0,
               height: 100.0,
             ),
