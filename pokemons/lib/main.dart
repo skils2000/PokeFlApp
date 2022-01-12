@@ -77,13 +77,20 @@ class SortSelect {
 
 class _MyHomePageState extends State<MyHomePage> {
   List pokemons;
-  List pokemonsBy5;
+  List pokemonsBy6;
   List pokemonsSorted;
-  String dropdownValue = "One";
+  int numberOfAdded = 6;
+  int sortTypeId = 0;
+  List sortReversed;
+  List<String> sortTypes = [
+    "not sorted",
+    "sort by name (up)",
+    "sort by name (down)"
+  ];
 
   Future<String> getPokemons() async {
     var resp = await http.get(
-        Uri.encodeFull("https://pokeapi.co/api/v2/pokemon?limit=10"),
+        Uri.encodeFull("https://pokeapi.co/api/v2/pokemon"),
         headers: {/*"Accept": "application/json"*/});
     print(resp.body);
     PokemonResponse temporary =
@@ -91,6 +98,8 @@ class _MyHomePageState extends State<MyHomePage> {
     print(temporary.results);
     setState(() {
       pokemons = temporary.results;
+      pokemonsBy6 = temporary.results.sublist(0, 6);
+      numberOfAdded = 6;
     });
     return "Success";
   }
@@ -99,6 +108,34 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     getPokemons();
+  }
+
+  void expandList() {
+    print(pokemons.sublist(0, numberOfAdded));
+    print(pokemonsBy6);
+    switch (sortTypeId) {
+      case 0:
+        {
+          pokemonsBy6
+              .addAll(pokemons.sublist(numberOfAdded, numberOfAdded + 6));
+          break;
+        }
+      case 1:
+        {
+          pokemonsBy6
+              .addAll(pokemonsSorted.sublist(numberOfAdded, numberOfAdded + 6));
+          break;
+        }
+      case 2:
+        {
+          pokemonsBy6
+              .addAll(sortReversed.sublist(numberOfAdded, numberOfAdded + 6));
+          break;
+        }
+    }
+    setState(() {
+      numberOfAdded = numberOfAdded + 6;
+    });
   }
 
   @override
@@ -112,7 +149,19 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         actions: <Widget>[
-          /*
+          IconButton(icon: Icon(Icons.sort), onPressed: () => {onSort()}),
+        ],
+
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title:
+            Text(widget.title + "                   " + sortTypes[sortTypeId]),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: getList()
+        /*
           Container(
             margin: EdgeInsets.only(top: 20.0, left: 20, right: 20.0),
             padding: EdgeInsets.all(12.0),
@@ -127,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               },
               isExpanded: true,
-              items: <String>["One", "Two", "Free", "Four"]
+              items: <String>['One', 'Two', 'Free', 'Four']
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -137,15 +186,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           */
-        ],
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: getList(),
+        ,
+
         /*Column(
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
@@ -179,14 +221,25 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
-    return ListView.separated(
-        itemBuilder: (BuildContext context, int index) {
-          return getListItem(index);
+    return NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo is ScrollEndNotification &&
+              scrollInfo.metrics.extentAfter == 0) {
+            expandList();
+            print("The End");
+            print(pokemonsBy6);
+            return true;
+          }
+          return false;
         },
-        separatorBuilder: (context, index) {
-          return Divider();
-        },
-        itemCount: pokemons.length);
+        child: ListView.separated(
+            itemBuilder: (BuildContext context, int index) {
+              return getListItem(index);
+            },
+            separatorBuilder: (context, index) {
+              return Divider();
+            },
+            itemCount: pokemonsBy6.length));
   }
 
   Widget getListItem(int i) {
@@ -199,13 +252,12 @@ class _MyHomePageState extends State<MyHomePage> {
         child: new Row(
           children: [
             new Image.network(
-              "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i + 1}.png",
               width: 200.0,
               height: 100.0,
             ),
             new Expanded(
                 child: new Text(
-              pokemons[i]['name'].toString(),
+              pokemonsBy6[i]['name'].toString(),
               style: TextStyle(fontSize: 18),
             ))
           ],
