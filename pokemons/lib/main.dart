@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:async';
 import 'dart:convert';
 
 void main() {
@@ -68,11 +67,11 @@ class Pokemon {
   String url;
 }
 
-class SortSelect {
-  int value;
+class PokemonUpdated {
   String name;
+  int index;
 
-  SortSelect({this.value, this.name});
+  PokemonUpdated({this.name, this.index});
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -81,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List pokemonsSorted;
   int numberOfAdded = 6;
   int sortTypeId = 0;
-  int numberOfPokemons = 30;
+  int numberOfPokemons = 600;
   List sortReversed;
   List<String> sortTypes = [
     "not sorted",
@@ -89,14 +88,21 @@ class _MyHomePageState extends State<MyHomePage> {
     "sort by name (down)"
   ];
 
-  Future<String> getPokemons() async {
-    var resp = await http.get(
-        Uri.encodeFull(
-            "https://pokeapi.co/api/v2/pokemon?limit=$numberOfPokemons"),
-        headers: {/*"Accept": "application/json"*/});
-    print(resp.body);
+  getPokemons() async {
+    var resp = await http.get(Uri.encodeFull(
+        "https://pokeapi.co/api/v2/pokemon?limit=$numberOfPokemons"));
+    //print(resp.body);
     PokemonResponse temporary =
         PokemonResponse.fromJson(json.decode(resp.body));
+    print(temporary.results);
+    setState(() {
+      pokemons = temporary.results.sublist(0);
+    });
+    print("обработка 1");
+    for (int i = 0; i < numberOfPokemons; i++) {
+      print(pokemons[i]);
+      pokemons[i]['url'] = (i + 1).toString();
+    }
     print(temporary.results);
     setState(() {
       pokemons = temporary.results.sublist(0);
@@ -105,14 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
     numberOfAdded = 6;
     pokemonsSorted = temporary.results.sublist(0);
     sortReversed = temporary.results;
-    /*
-    pokemonsSorted.sort((a, b) => a['name'].compareTo(b['name']));
-    sortReversed.sort((a, b) => b['name'].compareTo(a['name']));
-    print(pokemons);
-    print(pokemonsSorted);
-    print(sortReversed);
-    */
-    //getUrls();
     sortStuff();
     return "Success";
   }
@@ -130,17 +128,6 @@ class _MyHomePageState extends State<MyHomePage> {
     print(pokemons);
     print(pokemonsSorted);
     print(sortReversed);
-  }
-
-  Future getPic(url) async {
-    var resp = await http
-        .get(Uri.encodeFull(url), headers: {/*"Accept": "application/json"*/});
-    //print(resp.body);
-    var temporary = json.decode(resp.body);
-    print("in sprites");
-    print(temporary['sprites']['front_default']);
-
-    return temporary['sprites']['front_default'].toString();
   }
 
   void expandList() {
@@ -296,7 +283,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getListItem(int i) {
     if (pokemons == null || pokemons.length < 1) return null;
-    var pokPic = getPic(pokemonsBy6[i]['url']);
+
     return Container(
       margin: EdgeInsets.all(4.0),
       child: Padding(
@@ -304,8 +291,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: new Row(
           children: [
             new Image.network(
-              //pokPic.toString(),
-              "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i + 1}.png",
+              "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonsBy6[i]['url']}.png",
+              //"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i + 1}.png",
               //"https://img.pokemondb.net/sprites/silver/normal/${pokemonsBy6[i]['name']}.png",
               //[URL="http://pokemondb.net/pokedex/bulbasaur"][IMG]https://img.pokemondb.net/sprites/black-white/normal/bulbasaur.png[/IMG][/URL]}
 
